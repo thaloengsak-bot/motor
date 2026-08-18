@@ -2,14 +2,15 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
     <title>AR Blue Whale with Speed Controls</title>
+    
     <!-- นำเข้า A-Frame และ AR.js -->
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
-    <!-- สคริปต์ควบคุมพฤติกรรมการว่ายของปลาวาฬ -->
     <script>
+        // ควบคุมพฤติกรรมการว่ายของปลาวาฬ
         AFRAME.registerComponent('whale-behavior', {
             init: function() {
                 this.speedMultiplier = 1;
@@ -17,37 +18,36 @@
                 this.bobAngle = 0;
                 this.tailAngle = 0;
             },
-            // ฟังก์ชันสำหรับเปลี่ยนความเร็ว (ถูกเรียกใช้โดยปุ่ม UI)
             setSpeed: function(speed) {
                 this.speedMultiplier = speed;
             },
             tick: function(time, timeDelta) {
-                let dt = timeDelta / 1000; // แปลงเวลาเป็นวินาที
+                let dt = timeDelta / 1000;
 
-                // 1. ว่ายวนรอบๆ Marker (Orbit)
+                // 1. ว่ายวนรอบ Marker
                 this.orbitAngle -= 30 * this.speedMultiplier * dt; 
                 document.querySelector('#swimming-orbit').setAttribute('rotation', `0 ${this.orbitAngle} 0`);
 
-                // 2. เคลื่อนที่ขึ้นและลง (Bobbing)
+                // 2. เคลื่อนที่ขึ้นลง
                 this.bobAngle += 2 * Math.PI * (0.4 * this.speedMultiplier) * dt; 
                 let yPos = 1.2 + Math.sin(this.bobAngle) * 0.4; 
                 document.querySelector('#whale-center').setAttribute('position', `1.5 ${yPos} 0`);
 
-                // 3. สะบัดหาง (Tail Wagging)
+                // 3. สะบัดหาง
                 this.tailAngle += 2 * Math.PI * (1.5 * this.speedMultiplier) * dt; 
                 let wag = Math.sin(this.tailAngle) * 20; 
                 document.querySelector('#whale-tail').setAttribute('rotation', `0 ${wag} 0`);
             }
         });
 
-        // ฟังก์ชันเมื่อกดปุ่มเปลี่ยนความเร็ว
+        // ฟังก์ชันรับคำสั่งจากปุ่ม UI
         function changeSpeed(speed, btnElement) {
             let whale = document.querySelector('[whale-behavior]');
             if (whale && whale.components['whale-behavior']) {
                 whale.components['whale-behavior'].setSpeed(speed);
             }
 
-            // เปลี่ยนสีปุ่มที่กำลังใช้งานอยู่ (Active State)
+            // อัปเดตสีปุ่ม
             let buttons = document.querySelectorAll('.speed-btn');
             buttons.forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
@@ -55,37 +55,41 @@
     </script>
 
     <style>
-        /* สไตล์ของข้อความด้านบน */
+        /* บังคับไม่ให้ขอบหน้าจอมี Scrollbar */
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+
+        /* ข้อความด้านบน */
         .ui-header {
-            position: absolute;
+            position: fixed; /* ใช้ fixed แทน absolute */
             top: 20px;
             width: 100%;
             text-align: center;
-            z-index: 1000;
+            z-index: 99999; /* ให้ลอยอยู่บนสุดเสมอ */
             color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-            pointer-events: none;
+            font-family: sans-serif;
+            text-shadow: 2px 2px 4px rgba(0,0,0,1);
+            pointer-events: none; /* กดทะลุตัวหนังสือได้ */
         }
-        h2 { margin: 0; font-size: 24px; }
-        p { margin: 5px 0; font-size: 16px; color: #f5ead5; }
+        .ui-header h2 { margin: 0; font-size: 24px; }
+        .ui-header p { margin: 5px 0; font-size: 16px; color: #f5ead5; }
 
-        /* สไตล์ของปุ่มปรับความเร็วด้านล่าง */
+        /* แผงปุ่มกดด้านล่าง */
         .controls-container {
-            position: absolute;
-            bottom: 30px;
+            position: fixed; /* ใช้ fixed เพื่อให้อยู่ติดหน้าจอเสมอ */
+            bottom: 40px; /* ยกขึ้นมาเล็กน้อยเผื่อติดขอบมือถือ */
             left: 50%;
             transform: translateX(-50%);
-            z-index: 1000;
+            z-index: 99999; /* บังคับให้อยู่บนสุดเหนือกล้อง AR */
             display: flex;
-            gap: 12px;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 10px 18px;
-            border-radius: 30px;
-            backdrop-filter: blur(5px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 12px 20px;
+            border-radius: 40px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            pointer-events: auto; /* เปิดให้ปุ่มรับการสัมผัสได้ */
         }
 
+        /* ดีไซน์ปุ่ม */
         .speed-btn {
             background: rgba(255, 255, 255, 0.2);
             color: white;
@@ -95,32 +99,29 @@
             font-weight: bold;
             border-radius: 20px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: 0.2s;
             outline: none;
+            -webkit-tap-highlight-color: transparent; /* เอาไฮไลท์สีฟ้าตอนกดในมือถือออก */
         }
 
-        .speed-btn:active {
-            transform: scale(0.95);
-        }
-
-        /* สีปุ่มเมื่อถูกเลือกใช้งาน */
+        /* ปุ่มที่ถูกเลือก (สีฟ้าสว่าง) */
         .speed-btn.active {
             background: #00d2ff;
             color: #002b49;
             border-color: #00d2ff;
-            box-shadow: 0 0 12px #00d2ff;
+            box-shadow: 0 0 15px #00d2ff;
         }
     </style>
 </head>
-<body style="margin: 0; overflow: hidden;">
+<body>
 
-    <!-- ข้อความแจ้งเตือนด้านบน -->
+    <!-- UI ข้อความด้านบน -->
     <div class="ui-header">
         <h2>AR วาฬสีน้ำเงิน</h2>
-        <p>ส่องกล้องไปที่ Hiro Marker เพื่อดูปลาวาฬ</p>
+        <p>ส่องกล้องไปที่ Hiro Marker</p>
     </div>
 
-    <!-- แผงปุ่มกดเลือกความเร็วด้านล่าง -->
+    <!-- UI ปุ่มควบคุมความเร็วด้านล่าง -->
     <div class="controls-container">
         <button class="speed-btn active" onclick="changeSpeed(1, this)">1 เท่า</button>
         <button class="speed-btn" onclick="changeSpeed(2, this)">2 เท่า</button>
@@ -128,43 +129,37 @@
     </div>
 
     <!-- สร้าง AR Scene -->
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" renderer="antialias: true">
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" renderer="antialias: true" vr-mode-ui="enabled: false">
         
         <a-marker preset="hiro">
             
-            <!-- จุดศูนย์กลางสำหรับการหมุนวน (Orbit) -->
             <a-entity id="swimming-orbit">
                 
-                <!-- ตำแหน่งปลาวาฬ (ลอยขึ้นและห่างออกจากจุดศูนย์กลาง) -->
                 <a-entity id="whale-center" position="1.5 1.2 0">
                     
-                    <!-- โครงสร้างตัวปลาวาฬทั้งหมด -->
                     <a-entity id="whale-model" whale-behavior>
 
-                        <!-- ส่วนลำตัวบน (สีน้ำเงินเข้มอ้างอิงจากรูป) -->
+                        <!-- ส่วนลำตัวบน -->
                         <a-sphere position="0 0 0" scale="0.4 0.5 1.2" color="#10305a"></a-sphere>
-                        
-                        <!-- ส่วนท้อง (สีครีมอ่อน) -->
+                        <!-- ส่วนท้อง -->
                         <a-sphere position="0 -0.12 0" scale="0.38 0.35 1.15" color="#f5ead5"></a-sphere>
 
-                        <!-- ดวงตาซ้ายและขวา -->
+                        <!-- ดวงตา -->
                         <a-sphere position="0.35 0.1 -0.6" radius="0.04" color="#000000"></a-sphere>
                         <a-sphere position="-0.35 0.1 -0.6" radius="0.04" color="#000000"></a-sphere>
 
-                        <!-- ครีบข้าง (Flippers) -->
+                        <!-- ครีบข้าง -->
                         <a-cone position="-0.35 -0.1 -0.3" rotation="-20 0 50" radius-bottom="0.1" radius-top="0" height="0.9" color="#10305a"></a-cone>
                         <a-cone position="0.35 -0.1 -0.3" rotation="-20 0 -50" radius-bottom="0.1" radius-top="0" height="0.9" color="#10305a"></a-cone>
 
-                        <!-- ส่วนหางที่ขยับได้ (Tail Joint) -->
+                        <!-- หาง -->
                         <a-entity id="whale-tail" position="0 0 0.9">
-                            <!-- โคนหาง -->
                             <a-cone position="0 0 0.3" rotation="-90 0 0" radius-bottom="0.25" radius-top="0.05" height="0.8" color="#10305a"></a-cone>
-                            <!-- ปลายหางแฉก (Flukes) -->
                             <a-sphere position="0.35 0 0.7" rotation="0 -25 0" scale="0.4 0.05 0.2" color="#10305a"></a-sphere>
                             <a-sphere position="-0.35 0 0.7" rotation="0 25 0" scale="0.4 0.05 0.2" color="#10305a"></a-sphere>
                         </a-entity>
 
-                        <!-- จุดสีขาวบนหลัง (White Spots) -->
+                        <!-- จุดสีขาว -->
                         <a-sphere position="0.1 0.45 -0.2" radius="0.015" color="#ffffff"></a-sphere>
                         <a-sphere position="-0.15 0.48 0.1" radius="0.012" color="#ffffff"></a-sphere>
                         <a-sphere position="0.2 0.46 0.3" radius="0.015" color="#ffffff"></a-sphere>
